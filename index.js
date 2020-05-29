@@ -40,9 +40,30 @@ app.post("/query", async (req, res)=>{
         console.log(query);
 
         const response = await manager.process('en', query);
-        res.send(response);
+        let data={
+            sections:response.nluAnswer.classifications.filter(a=>a.intent != "None" && a.score>0).map(a=>{
+                return {
+                    section:getSection(a.intent),
+                    score:a.score
+                };
+            })
+        };
+
+        if(response.intent != "None"){
+            data.most_relevant={
+                section:getSection(response.intent),
+                score:response.score,
+                answers:response.answers
+            }
+        }
+
+        res.send(data);
     }catch(err){
         res.send(err);
     }
     
-})
+});
+
+function getSection(section){
+    return ipcData.filter(a=>a.IPC === section)[0];
+}
